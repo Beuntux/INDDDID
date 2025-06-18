@@ -1,0 +1,16 @@
+---
+- name: Check if Gitea runner token is empty
+  set_fact:
+    token_needed: "{{ gitea_runner_token | length == 0 }}"
+
+- name: Get Gitea runner token if needed
+  shell: |
+    docker exec --user git -it {{ gitea_container_name }} gitea actions generate-runner-token -s {{ gitea_organisation_name }}
+  register: new_gitea_token
+  when: token_needed
+  delegate_to: "{{ groups['gitea'][0] }}"
+
+- name: Update gitea_runner_token var
+  set_fact:
+    gitea_runner_token: "{{ new_gitea_token.stdout | trim }}"
+  when: token_needed

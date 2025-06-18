@@ -1,0 +1,5 @@
+---
+- include_tasks: check_runner.yml
+- include_tasks: generate_token.yml
+- include_tasks: deploy_runner.yml
+  when: not runner_installed

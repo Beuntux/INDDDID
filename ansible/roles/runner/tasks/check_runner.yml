@@ -1,0 +1,30 @@
+---
+- name: Check runner binary
+  stat:
+    path: /usr/local/bin/act_runner
+  register: runner_binary
+
+- name: Check runner configuration file
+  stat:
+    path: /etc/act_runner/config.yaml
+  register: runner_config
+
+- name: Check runner registration file
+  stat:
+    path: /var/lib/act_runner/.runner
+  register: runner_registration
+
+- name: Check runner systemd service
+  stat:
+    path: /etc/systemd/system/act_runner.service
+  register: runner_service
+
+- name: Set fact if runner is installed
+  set_fact:
+    runner_installed: >-
+      {{
+        runner_binary.stat.exists and
+        runner_config.stat.exists and
+        runner_registration.stat.exists and
+        runner_service.stat.exists
+      }}

@@ -1,0 +1,8 @@
+---
+gitea_runner_token: ""
+gitea_container_name: "gitea"
+gitea_organisation_name: ""
+gitea_runner_download_url: "https://gitea.com/gitea/act_runner/releases/download/v0.2.11/act_runner-0.2.11-linux-amd64"
+gitea_instance_url: ""
+gitea_runner_name: ""
+gitea_runner_labels: "self-hosted-develop:host"

@@ -1,0 +1,93 @@
+---
+- name: Deploy Gitea Runner
+  block:
+    - name: Download Gitea runner binary
+      get_url:
+        url: "{{ gitea_runner_download_url }}"
+        dest: /tmp/act_runner
+        mode: '0755'
+
+    - name: Create directory for Gitea runner configuration
+      file:
+        path: /etc/act_runner
+        state: directory
+        mode: '0755'
+
+    - name: Generate Gitea runner configuration
+      shell: |
+        /tmp/act_runner generate-config > /etc/act_runner/config.yaml
+      args:
+        creates: /etc/act_runner/config.yaml
+
+    - name: Debug variables
+      debug:
+          msg:
+          - "Instance URL: {{ gitea_instance_url }}"
+          - "Token: {{ gitea_runner_token }}"
+          - "Runner Name: {{ gitea_runner_name }}"
+          - "Runner Labels: {{ gitea_runner_labels }}"
+
+    - name: Register the runner with Gitea
+      command: >-
+        /tmp/act_runner register
+        --no-interactive
+        --instance {{ gitea_instance_url }}
+        --token {{ gitea_runner_token }}
+        --name {{ gitea_runner_name }}
+        --labels {{ gitea_runner_labels }}
+      args:
+        chdir: /tmp
+    
+    - name: Create act_runner user
+      user:
+        name: act_runner
+        system: yes
+        shell: /usr/sbin/nologin
+        create_home: yes
+        home: /var/lib/act_runner
+
+    - name: Move runner binary to /usr/local/bin
+      command: >-
+        mv /tmp/act_runner /usr/local/bin/
+      args:
+        creates: "/usr/local/bin/act_runner"
+
+    - name: Create directory for .runner
+      file:
+        path: /var/lib/act_runner
+        state: directory
+        mode: '0755'
+
+    - name: Move .runner file to /var/lib/act_runner
+      command: >-
+        mv /tmp/.runner /var/lib/act_runner/
+      args:
+        creates: "/var/lib/act_runner/.runner"
+
+    - name: Set ownership for act_runner user
+      file:
+        path: "{{ item }}"
+        owner: act_runner
+        group: act_runner
+      with_items:
+        - "/usr/local/bin/act_runner"
+        - /var/lib/act_runner/.runner
+        - /etc/act_runner/config.yaml
+
+    - name: Add act_runner user to docker group
+      user:
+        name: act_runner
+        groups: docker
+        append: yes
+
+    - name: Create systemd service for Gitea runner
+      template:
+        src: act_runner.service.j2
+        dest: /etc/systemd/system/act_runner.service
+
+    - name: Reload systemd and enable Gitea runner service
+      systemd:
+        name: act_runner
+        daemon_reload: yes
+        enabled: yes
+        state: started

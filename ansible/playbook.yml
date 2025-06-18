@@ -1,0 +1,11 @@
+- name: Préparations des VM web
+  hosts: web
+  remote_user: user
+  become: true
+  
+  roles:
+    - docker
+    - nodejs
+    - runner
+
+...    
